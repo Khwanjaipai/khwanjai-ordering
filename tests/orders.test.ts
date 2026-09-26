@@ -72,6 +72,29 @@ test("Resend acceptance requires a provider ID; failures and missing config reje
   for (const response of [Response.json({ message: "Failure" }, { status: 500 }), Response.json({}), Response.json({ id: "" })]) await assert.rejects(deliverOrderEmail(order, config, async () => response));
   await assert.rejects(deliverOrderEmail(order, {}, accepted));
 });
+test("API logs safe Resend diagnostics without secrets or authorization headers", async () => {
+  const originalFetch = global.fetch, originalError = console.error;
+  const apiKey = "test-resend-secret";
+  const order = payload();
+  process.env.RESEND_API_KEY = apiKey; process.env.RESTAURANT_ORDER_EMAIL = "restaurant@example.com"; process.env.ORDER_FROM_EMAIL = "sender@example.com";
+  const logs: unknown[][] = [];
+  console.error = (...args: unknown[]) => { logs.push(args); };
+  try {
+    global.fetch = async () => Response.json({ error: { name: "validation_error", message: "The sender address is not verified" } }, { status: 422 });
+    const response = await POST(new Request("http://localhost/api/orders", { method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", "x-vercel-forwarded-for": randomUUID() }, body: JSON.stringify(order) }));
+    assert.equal(response.status, 503);
+    const log = logs.at(-1)![1] as Record<string, unknown>;
+    assert.equal(log.errorName, "OrderEmailError"); assert.equal(log.statusCode, 422);
+    assert.equal(log.resendErrorName, "validation_error"); assert.equal(log.resendErrorMessage, "The sender address is not verified");
+    assert.equal(log.hasResendApiKey, true); assert.equal(log.hasOrderFromEmail, true); assert.equal(log.hasRestaurantOrderEmail, true);
+    assert.equal(log.senderEmail, "sender@example.com"); assert.equal(log.recipientEmail, "restaurant@example.com");
+    const serialized = JSON.stringify(logs);
+    assert.equal(serialized.includes(apiKey), false); assert.equal(serialized.includes("Authorization"), false); assert.equal(serialized.includes("Bearer"), false);
+  } finally {
+    global.fetch = originalFetch; console.error = originalError;
+    delete process.env.RESEND_API_KEY; delete process.env.RESTAURANT_ORDER_EMAIL; delete process.env.ORDER_FROM_EMAIL;
+  }
+});
 test("safe retries reuse original timestamp and reject changed orders", async () => {
   const input = validateOrder(payload()), order = createOrder(input), saved = await storeOrReuseOrder(order);
   const retried = await storeOrReuseOrder({ ...order, createdAt: "2099-01-01T00:00:00.000Z" }); assert.equal(retried.createdAt, saved.createdAt);
