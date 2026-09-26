@@ -124,6 +124,31 @@ test("production requires shared protection; configured Redis gives short unique
     for (let i = 0; i < 5; i++) assert.equal(await allowOrderRequest("unique-production-ip"), true); assert.equal(await allowOrderRequest("unique-production-ip"), false);
   } finally { global.fetch = originalFetch; for (const [name, value] of [["NODE_ENV",oldEnv.mode],["UPSTASH_REDIS_REST_URL",oldEnv.url],["UPSTASH_REDIS_REST_TOKEN",oldEnv.token]]) { if (value === undefined) delete process.env[name!]; else process.env[name!] = value; } }
 });
+test("API logs safe Upstash diagnostics for REST failures", async () => {
+  const originalFetch = global.fetch, originalError = console.error;
+  const token = "test-upstash-secret";
+  const logs: unknown[][] = [];
+  process.env.UPSTASH_REDIS_REST_URL = "https://redis.test"; process.env.UPSTASH_REDIS_REST_TOKEN = token;
+  console.error = (...args: unknown[]) => { logs.push(args); };
+  try {
+    global.fetch = async (_url, init) => {
+      assert.equal(init?.method, "POST");
+      assert.equal(new Headers(init?.headers).get("Authorization"), `Bearer ${token}`);
+      return Response.json({ error: "WRONGPASS invalid or missing auth token" }, { status: 401 });
+    };
+    const response = await POST(new Request("http://localhost/api/orders", { method: "POST", headers: { "content-type": "application/json", origin: "http://localhost", "x-vercel-forwarded-for": randomUUID() }, body: JSON.stringify(payload()) }));
+    assert.equal(response.status, 503);
+    const log = logs.at(-1)![1] as Record<string, unknown>;
+    assert.equal(log.operation, "rateLimit"); assert.equal(log.requestMethod, "POST"); assert.equal(log.statusCode, 401);
+    assert.equal(log.upstashErrorMessage, "WRONGPASS invalid or missing auth token");
+    assert.equal(log.hasUpstashRestUrl, true); assert.equal(log.hasUpstashRestToken, true); assert.equal(log.restUrlBeginsHttps, true);
+    const serialized = JSON.stringify(logs);
+    assert.equal(serialized.includes(token), false); assert.equal(serialized.includes("Authorization"), false); assert.equal(serialized.includes("Bearer"), false);
+  } finally {
+    global.fetch = originalFetch; console.error = originalError;
+    delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  }
+});
 test("API rejects foreign origins, wrong content types, oversize requests and honeypot spam", async () => {
   const options = { method: "POST", body: JSON.stringify(payload()) };
   assert.equal((await POST(new Request("http://localhost/api/orders", { ...options, headers: { origin: "https://other.test", "content-type": "application/json" } }))).status, 403);

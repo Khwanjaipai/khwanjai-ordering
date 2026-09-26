@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createOrder, OrderValidationError, validateOrder } from "../../../lib/orders";
 import { sendOrderNotification, OrderEmailError } from "../../../lib/email";
-import { allowOrderRequest, RetryConflict, storeOrReuseOrder } from "../../../lib/order-storage";
+import { allowOrderRequest, OrderStorageError, RetryConflict, storeOrReuseOrder } from "../../../lib/order-storage";
 import { isSameOriginRequest } from "../../../lib/request-origin";
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -36,6 +36,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, orderNumber: order.orderNumber, total: order.total }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof OrderValidationError || error instanceof RetryConflict) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof OrderStorageError) {
+      const details = error.details;
+      console.error("Order storage failed", {
+        operation: details.operation,
+        requestMethod: details.requestMethod,
+        statusCode: details.statusCode,
+        upstashErrorName: details.upstashErrorName,
+        upstashErrorMessage: details.upstashErrorMessage ? redactSecrets(details.upstashErrorMessage) : undefined,
+        errorName: details.causeName ?? error.name,
+        errorMessage: details.causeMessage ?? error.message,
+        hasUpstashRestUrl: details.hasRestUrl,
+        hasUpstashRestToken: details.hasRestToken,
+        restUrlBeginsHttps: details.restUrlBeginsHttps,
+        orderId: details.orderId ?? orderId ?? orderNumber,
+      });
+      return NextResponse.json({ error: "We couldn’t send your online order. Please contact Khwanjai directly or try again." }, { status: 503 });
+    }
     const emailError = error instanceof OrderEmailError ? error : undefined;
     const genericError = error instanceof Error ? error : undefined;
     console.error("Order notification failed", {
