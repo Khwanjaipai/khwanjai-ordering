@@ -1,7 +1,10 @@
+import { menuImageManifest } from "./menu-images";
+
 export type Choice = { id: string; th: string; en: string };
 export type OptionGroup = { id: string; th: string; en: string; choices: Choice[] };
 export type MenuItem = {
   id: string; category: string; th: string; en: string;
+  image: string;
   price?: number; specialPrice?: number; priceRange?: string;
   groups?: OptionGroup[]; spicy?: boolean; clarification?: string;
 };
@@ -17,7 +20,7 @@ export const categories = [
 ];
 const unclear = "The artwork shows 40–50 THB but does not specify the price options. Please contact Khwanjai to order.";
 // Transcribed from the supplied menu. Separate rows retain their own prices and choices.
-export const menu: MenuItem[] = [
+const menuWithoutImages: Omit<MenuItem, "image">[] = [
   { id: "boat-noodle", category: "noodles", th: "ก๋วยเตี๋ยวน้ำตก", en: "Boat noodle soup", price: 35, specialPrice: 45, groups: [protein(pork, beef), size] },
   { id: "clear-noodle", category: "noodles", th: "ก๋วยเตี๋ยวน้ำใส", en: "Clear noodle soup", price: 35, specialPrice: 45, groups: [protein(pork, beef), size] },
   { id: "tom-yum-noodle", category: "noodles", th: "ก๋วยเตี๋ยวต้มยำ", en: "Tom yum noodle soup (beef)", price: 50, specialPrice: 60, groups: [size], spicy: true },
@@ -53,6 +56,7 @@ export const menu: MenuItem[] = [
   { id: "coconut-curry", category: "curries", th: "แกงเผ็ดไก่กะทิ", en: "Spicy chicken curry in coconut milk", price: 60, spicy: true },
 ];
 export const spiceLevels = [choice("none", "ไม่เผ็ด", "Not spicy"), choice("mild", "เผ็ดน้อย", "Mild"), choice("medium", "เผ็ดกลาง", "Medium"), choice("thai", "เผ็ดมาก", "Thai spicy")];
+export const menu: MenuItem[] = menuWithoutImages.map((item) => ({ ...item, image: menuImageManifest[item.id].image }));
 export function getItemPrice(item: MenuItem, options: Record<string, string>): number {
   if (item.price === undefined) throw new Error("Please contact the restaurant for this item’s price options.");
   const groups = item.groups ?? [];

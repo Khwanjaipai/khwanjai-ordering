@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { categories, getItemPrice, menu } from "../data/menu";
 import { createOrder, formatOrderEmail, validateOrder } from "../lib/orders";
 import { deliverOrderEmail } from "../lib/email";
@@ -24,6 +26,9 @@ test("artwork menu retains 33 rows, category counts, and exact listed prices", (
   assert.deepEqual(categories.map((category) => menu.filter((item) => item.category === category.id).length), [3,15,12,3]);
   assert.deepEqual(menu.map((item) => item.priceRange ?? (item.specialPrice ? `${item.price}/${item.specialPrice}` : item.price)), ["35/45","35/45","50/60",40,50,40,50,50,40,50,50,"40–50","40–50","40–50",40,40,50,10,40,50,60,100,60,60,60,60,60,60,50,60,60,60,60]);
   assert.deepEqual(menu.find((item) => item.id === "tom-yum-noodle")!.groups!.map((group) => group.id), ["size"]);
+});
+test("every menu item has a local image asset and descriptive manifest path", () => {
+  assert.equal(menu.every((item) => item.image.startsWith("/images/menu/") && existsSync(path.join(process.cwd(), "public", item.image.slice(1)))), true);
 });
 test("server ignores browser-supplied prices and calculates 170 THB", () => {
   const input = { ...payload(), total: 1, items: payload().items.map((item) => ({ ...item, price: -999 })) };

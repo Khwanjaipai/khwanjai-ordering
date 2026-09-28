@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 test("real local API accepts browser origin and rejects foreign origin without sending email", async ({ request }) => {
-  const same = await request.post("/api/orders", { headers: { origin: "http://127.0.0.1:3000" }, data: {} });
+  const same = await request.post("/api/orders", { headers: { origin: "http://127.0.0.1:3010" }, data: {} });
   expect(same.status()).toBe(400); expect((await same.json()).error).toBe("Please check your order details.");
   const foreign = await request.post("/api/orders", { headers: { origin: "https://other.example" }, data: {} });
   expect(foreign.status()).toBe(403);
@@ -38,10 +38,14 @@ test("editing, removing and reloading preserves valid cart; ambiguous dishes req
   await page.getByRole("button", { name: "Contact to order Pad Thai", exact: true }).click(); await expect(page.getByRole("dialog")).toContainText("does not specify"); await expect(page.getByRole("button", { name: /Add to order/ })).toHaveCount(0);
 });
 test("all target mobile widths fit and show ordering immediately", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.locator(".menu-card").first().waitFor();
   for (const width of [360,375,390,414,430,768,1280]) {
-    await page.setViewportSize({ width, height: 860 }); await page.goto("/");
+    await page.setViewportSize({ width, height: 860 });
     const fits = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth); expect(fits).toBe(true);
-    const firstCard = await page.locator(".menu-card").first().boundingBox(); expect(firstCard!.y).toBeLessThan(width <= 430 ? 720 : 810);
-    await page.screenshot({ path: `work/screenshots/khwanjai-${width}.png`, fullPage: width === 390 || width === 1280 });
+    const firstCard = await page.locator(".menu-card").first().boundingBox(); expect(firstCard!.y).toBeLessThan(width <= 430 ? 720 : width <= 768 ? 850 : 940);
+    const imageBox = await page.locator(".menu-card .card-image-button").first().boundingBox();
+    expect(imageBox!.width / imageBox!.height).toBeCloseTo(1.5, 1);
+    expect(imageBox!.width).toBeGreaterThan(width <= 430 ? 250 : 220);
   }
 });

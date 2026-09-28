@@ -166,3 +166,67 @@ legend small { font-size:10px; color:var(--orange); margin-left:8px; }
 }
 @media(max-width:370px) { .hero-copy { padding:20px 15px 14px; }.hero h1 { font-size:43px; }.hero h1 span { font-size:21px; margin-left:7px; }.contact span { width:16px; height:16px; font-size:10px; }.contact { font-size:10px; gap:4px; }.menu-card { padding:13px; grid-template-columns:minmax(0,1fr) 83px; }.card-copy h3 { font-size:16px; }.card-copy p { font-size:12px; }.add-button { min-width:78px; }.category-nav a { font-size:10px; }.category-nav a small { font-size:9px; }.line-controls .muted { display:none; } }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; }* { transition:none!important; } }
+
+/* Visual menu upgrade: keep the original palette and business flow, add a calmer editorial rhythm. */
+.hero { min-height:460px; box-shadow:0 18px 45px #5b2b1712; }
+.hero h1 { max-width:560px; font-size:clamp(42px,5.1vw,72px); }
+.hero h1 span { font-size:clamp(20px,2.2vw,29px); }
+.hero-actions { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.hero-actions > .primary { min-width:174px; text-decoration:none; }
+.hero-actions .contacts { flex:1; min-width:270px; }
+.hero-art { min-height:460px; }
+.hero-food-image { width:100%; height:100%; object-fit:cover; object-position:center; }
+.ai-intro { display:grid; grid-template-columns:.7fr 1.5fr 1fr; gap:26px; align-items:start; padding:38px 0 18px; border-bottom:1px solid var(--line); }
+.ai-intro h2 { font:400 clamp(24px,3vw,38px)/1.2 Georgia,"Leelawadee UI",serif; max-width:620px; }
+.ai-intro > p:last-child { color:var(--muted); font-size:14px; max-width:280px; }
+.menu-card { padding:0; overflow:hidden; min-height:100%; display:flex; flex-direction:column; align-items:stretch; }
+.card-image-button { display:block; width:100%; aspect-ratio:3 / 2; padding:0; border:0; background:#e6d4be; overflow:hidden; cursor:pointer; }
+.menu-card-image { display:block; width:100%; height:100%; object-fit:cover; transition:transform .45s ease; }
+.card-image-button:hover .menu-card-image, .card-image-button:focus-visible .menu-card-image { transform:scale(1.07); }
+.card-copy { width:100%; padding:16px 18px 0; }
+.card-bottom { width:100%; margin-top:auto; padding:12px 18px 16px; }
+.card-copy h3 { font-size:16px; }
+.card-copy p { font-size:12px; }
+.card-bottom strong { font-size:18px; }
+.section-title { margin-top:10px; }
+.menu-card[data-reveal], .ai-intro[data-reveal], .faq-section[data-reveal] { opacity:0; transform:translateY(18px); transition:opacity .65s ease, transform .65s ease; }
+.menu-card[data-reveal].is-visible, .ai-intro[data-reveal].is-visible, .faq-section[data-reveal].is-visible { opacity:1; transform:none; }
+.menu-card:nth-child(2n)[data-reveal] { transition-delay:60ms; }
+.menu-card:nth-child(3n)[data-reveal] { transition-delay:100ms; }
+.product-hero { margin:-30px -30px 24px; aspect-ratio:3 / 2; overflow:hidden; background:#eee1d0; }
+.product-hero img { width:100%; height:100%; object-fit:cover; }
+.faq-section { padding:30px 0 12px; }
+.faq-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.faq-grid details { border:1px solid var(--line); border-radius:12px; background:#fffcf7; padding:0 16px; }
+.faq-grid summary { padding:17px 0; font-size:14px; }
+.faq-grid summary span { color:var(--orange); font-size:20px; }
+.faq-grid details[open] summary span { transform:rotate(45deg); }
+.faq-grid details p { color:var(--muted); font-size:13px; padding:0 0 17px; }
+.sticky-cart.has-items { animation:cart-arrive .45s ease both; }
+@keyframes cart-arrive { from { transform:translate(-50%,10px); opacity:.65; } to { transform:translate(-50%,0); opacity:1; } }
+@media(max-width:950px) { .ai-intro { grid-template-columns:1fr 1.7fr; }.ai-intro > p:last-child { grid-column:2; }.hero-art { min-height:390px; } }
+@media(max-width:700px) {
+  .hero { min-height:0; }.hero-actions { display:block; }.hero-actions > .primary { margin-bottom:12px; }.hero-actions .contacts { min-width:0; }
+  .hero-art { display:none; }.hero-bottom { display:none; }.hero-food-image { object-position:center 58%; }.photo-caption { width:84px; height:84px; bottom:10px; left:10px; font-size:12px; }.photo-caption i { font-size:16px; }
+  .ai-intro { display:block; padding:28px 0 12px; }.ai-intro h2 { margin:7px 0 12px; font-size:27px; }.ai-intro > p:last-child { max-width:none; }
+  .menu-card { display:flex; padding:0; }.card-image-button { aspect-ratio:3 / 2; }.menu-card-image { min-height:0; }.card-copy { padding:14px 16px 0; }.card-bottom { flex-direction:row; align-items:center; padding:10px 16px 14px; }
+  .product-hero { margin:-24px -20px 22px; }.faq-grid { grid-template-columns:1fr; gap:8px; }
+}
+@media(max-width:370px) { .card-copy { padding-left:13px; padding-right:13px; }.card-bottom { padding-left:13px; padding-right:13px; } }
+@media(prefers-reduced-motion:reduce) { .menu-card[data-reveal],.ai-intro[data-reveal],.faq-section[data-reveal] { opacity:1; transform:none; transition:none; } .menu-card-image { transition:none; } .sticky-cart.has-items { animation:none; } }
+@media (min-width:701px) and (max-width:950px) {
+  .hero { grid-template-columns:1fr; }
+  .hero-art { display:none; }
+  .hero-copy { padding:22px 24px 14px; }
+  .hero h1 { font-size:40px; }
+  .hero h1 span { font-size:20px; }
+  .hero-bottom { display:none; }
+  .hero-actions .contact-note { display:none; }
+  .hero-actions .contact { min-height:40px; }
+  .order-intro { padding:21px 0 9px; }
+  .order-intro > p { display:none; }
+  .category-nav { padding:6px 0; }
+  .category-nav a { min-height:50px; }
+  .menu-section { padding-top:18px; }
+  .section-title { margin-bottom:9px; }
+}
