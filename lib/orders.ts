@@ -49,12 +49,15 @@ export function calculateOrderTotal(lines: Pick<OrderLine, "price" | "quantity">
 export function createOrder(input: OrderInput): CreatedOrder {
   const lines = input.items.map((line): OrderLine => {
     const item = menu.find((entry) => entry.id === line.id)!;
-    return { ...line, th: item.th, en: item.en, price: getItemPrice(item, line.options), optionLabels: describeOptions(item, line.options), spiceLabel: spiceLevels.find((entry) => entry.id === line.spice)?.en };
+    const spice = spiceLevels.find((entry) => entry.id === line.spice);
+    return { ...line, th: item.th, en: item.en, price: getItemPrice(item, line.options), optionLabels: describeOptions(item, line.options), spiceLabel: spice ? `${spice.th} / ${spice.en}` : undefined };
   });
   return { submissionId: input.submissionId, orderNumber: `KH-${input.submissionId.toUpperCase()}`, createdAt: new Date().toISOString(), customer: input.customer, lines, total: calculateOrderTotal(lines), fingerprint: createHash("sha256").update(JSON.stringify({ customer: input.customer, items: input.items })).digest("hex") };
 }
 export function formatOrderEmail(order: CreatedOrder): { subject: string; text: string } {
   const timestamp = new Intl.DateTimeFormat("en-GB", { timeZone: restaurant.timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt));
-  const lines = order.lines.map((line) => [`${line.quantity}x ${line.en}`, line.th, ...line.optionLabels, line.spiceLabel ? `Spice: ${line.spiceLabel}` : "", `${line.price} THB each`, `${line.price * line.quantity} THB`, line.instructions ? `Item instructions: ${line.instructions}` : ""].filter(Boolean).join("\n")).join("\n\n");
-  return { subject: `New Khwanjai Order — ${order.orderNumber} — ฿${order.total}`, text: `NEW KHWANJAI ORDER\n\nOrder #: ${order.orderNumber}\nDate/Time: ${timestamp} (${restaurant.timezone})\n\nCUSTOMER\n\nName: ${order.customer.name}\nPhone: ${order.customer.phone}\n\nORDER TYPE\n\n${order.customer.orderType}\n\nLOCATION\n\n${order.customer.location || "Pickup at restaurant"}\n\nREQUESTED TIME\n\n${order.customer.requestedTime || "As soon as possible"}\n\nORDER\n\n${lines}\n\nSPECIAL INSTRUCTIONS\n\n${order.customer.instructions || "None"}\n\nTOTAL\n\n${order.total} THB\n\nRestaurant must confirm the order by phone.` };
+  const orderType = order.customer.orderType === "Pickup" ? "รับที่ร้าน / Pickup" : "จัดส่ง / Delivery";
+  const location = order.customer.location || "รับที่ร้าน / Pickup at restaurant";
+  const lines = order.lines.map((line) => [`${line.quantity}x ${line.th} / ${line.en}`, ...line.optionLabels, line.spiceLabel ? `ระดับความเผ็ด / Spice: ${line.spiceLabel}` : "", `${line.price} บาทต่อรายการ / THB each`, `${line.price * line.quantity} บาท / THB`, line.instructions ? `หมายเหตุรายการ / Item instructions: ${line.instructions}` : ""].filter(Boolean).join("\n")).join("\n\n");
+  return { subject: `ออเดอร์ใหม่ / New Khwanjai Order — ${order.orderNumber} — ฿${order.total}`, text: `ออเดอร์ใหม่ของขวัญใจ\nNEW KHWANJAI ORDER\n\nเลขที่ออเดอร์ / Order #: ${order.orderNumber}\nวันที่และเวลา / Date/Time: ${timestamp} (${restaurant.timezone})\n\nลูกค้า / CUSTOMER\n\nชื่อ / Name: ${order.customer.name}\nโทรศัพท์ / Phone: ${order.customer.phone}\n\nประเภทออเดอร์ / ORDER TYPE\n\n${orderType}\n\nสถานที่ / LOCATION\n\n${location}\n\nเวลาที่ต้องการ / REQUESTED TIME\n\n${order.customer.requestedTime || "โดยเร็วที่สุด / As soon as possible"}\n\nรายการอาหาร / ORDER\n\n${lines}\n\nหมายเหตุพิเศษ / SPECIAL INSTRUCTIONS\n\n${order.customer.instructions || "ไม่มี / None"}\n\nยอดรวม / TOTAL\n\n${order.total} บาท / THB\n\nกรุณาโทรยืนยันออเดอร์กับลูกค้า\nRestaurant must confirm the order by phone.` };
 }

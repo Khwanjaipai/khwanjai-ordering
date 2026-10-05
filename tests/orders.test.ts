@@ -64,8 +64,8 @@ test("pickup omits location; delivery requires a location", () => {
 });
 test("email includes quantities, choices, per-item notes, time, customer and total", () => {
   const order = createOrder(validateOrder(payload())), email = formatOrderEmail(order);
-  assert.match(email.subject, /New Khwanjai Order — KH-.* — ฿170/);
-  for (const text of ["2x Basil beef / squid / shrimp", "Shrimp", "50 THB each", "100 THB", "No basil stems", "Medium", "No peanuts", "John Smith", "081-234-5678", "7:00 PM", "Asia/Bangkok", "170 THB"]) assert.ok(email.text.includes(text), text);
+  assert.match(email.subject, /ออเดอร์ใหม่ \/ New Khwanjai Order — KH-.* — ฿170/);
+  for (const text of ["2x กะเพราเนื้อ \/ ปลาหมึก \/ กุ้ง / Basil beef / squid / shrimp", "กุ้ง / Shrimp", "50 บาทต่อรายการ / THB each", "100 บาท / THB", "No basil stems", "เผ็ดกลาง / Medium", "No peanuts", "John Smith", "081-234-5678", "7:00 PM", "Asia/Bangkok", "170 บาท / THB", "กรุณาโทรยืนยันออเดอร์"]) assert.ok(email.text.includes(text), text);
 });
 test("cart merges matching choices, updates quantities, edits, removes and restores", () => {
   const line: CartLine = { key: "one", id: "green-curry", options: { protein: "chicken" }, instructions: "", quantity: 1 };
